@@ -1,0 +1,5 @@
+# Referência: start_debug.sh do relatório de execução (docs/relatorio-mvp-execucao.pdf seção 6).
+# Sobe na ordem causal com LOG POR PROCESSO (resolve o &>/dev/null do ./server original),
+# valida portas e dispara strace no LoginServer se ele não subir.
+# Ordem: Ticket(7777) -> Gateway(5560) -> Login(6543) -> Mission -> World(5567) -> Zone
+# Aplica LC_ALL=C/LANG=C/LANGUAGE=C. Ver PDF para o conteúdo completo testado.

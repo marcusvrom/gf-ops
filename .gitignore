@@ -1,0 +1,33 @@
+# Configs reais com IPs/segredos
+config/local/
+*.local.ini
+
+# Segredos
+.env
+*.key
+secrets/
+
+# Artefatos Rust
+tools-rs/**/target/
+
+# Artefatos .NET
+web/**/bin/
+web/**/obj/
+bot/**/bin/
+bot/**/obj/
+*.user
+
+# Backups e dumps
+*.bak
+*.bacpac
+ops/backup/*.sql
+
+# Server files (NÃO versionar binários do jogo — backup separado)
+server-files/
+client/
+
+# SO / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
