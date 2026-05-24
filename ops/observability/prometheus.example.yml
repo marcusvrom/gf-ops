@@ -1,0 +1,62 @@
+# prometheus.example.yml
+#
+# ESTE ARQUIVO É APENAS UM EXEMPLO. Nada aqui é instalado pelos scripts deste repo.
+# Prometheus e Grafana ficam num HOST SEPARADO (sua máquina, um VPS de monitoração,
+# Grafana Cloud free tier, etc). O gf-server NÃO depende disso pra funcionar.
+#
+# Como usar:
+#   1) Tenha um Prometheus em algum lugar.
+#   2) Garanta que o Prometheus alcança a VM do gf-server nas portas 9100 e 9187.
+#      (Se a VM é privada, vai precisar abrir/expor por túnel SSH ou WireGuard.)
+#   3) Cole o conteúdo abaixo em prometheus.yml (do SEU Prometheus), ajustando
+#      <IP-DA-VM>, e dê reload.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    project: gf-server
+    env: mvp
+
+scrape_configs:
+  # Métricas do host (CPU/mem/disk/net + textfile do probe gf_port_up)
+  - job_name: node_gf_vm
+    static_configs:
+      - targets: ['<IP-DA-VM>:9100']
+        labels:
+          host: gf-vm
+
+  # Métricas do PostgreSQL (stats + custom queries do gf)
+  - job_name: postgres_gf
+    static_configs:
+      - targets: ['<IP-DA-VM>:9187']
+        labels:
+          host: gf-vm
+          cluster: gf-mvp
+
+# Regras de alerta — exemplos. Coloque em outro arquivo e referencie via
+# `rule_files:` se quiser.
+#
+# groups:
+#   - name: gf-server
+#     rules:
+#       - alert: GfLoginDown
+#         expr: gf_port_up{service="login"} == 0
+#         for: 2m
+#         labels: { severity: critical }
+#         annotations:
+#           summary: "LoginServer offline há mais de 2 min"
+#
+#       - alert: GfInvariantBroken
+#         expr: gf_accounts_total != gf_invariant_tb_user_count_ms_count
+#         for: 5m
+#         labels: { severity: warning }
+#         annotations:
+#           summary: "accounts vs tb_user com contagens diferentes — invariante #1 em risco"
+#
+#       - alert: PgDown
+#         expr: pg_up == 0
+#         for: 2m
+#         labels: { severity: critical }
+#         annotations:
+#           summary: "postgres_exporter não consegue conectar no Postgres"

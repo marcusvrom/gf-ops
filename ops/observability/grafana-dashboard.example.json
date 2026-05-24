@@ -1,0 +1,96 @@
+{
+  "__comment": "Dashboard mínimo de exemplo. Importe manualmente em Grafana > Dashboards > Import. Datasource: 'Prometheus' (substitua o uid se o seu for diferente). NÃO instalado por este repo.",
+  "title": "GF-Server MVP",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "tags": ["gf-server"],
+  "templating": { "list": [] },
+  "time": { "from": "now-3h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Login UP?",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "targets": [{"expr": "gf_port_up{service=\"login\"}", "legendFormat": "login"}],
+      "fieldConfig": {"defaults": {"mappings": [
+        {"type": "value", "options": {"0": {"text": "DOWN", "color": "red"}, "1": {"text": "UP", "color": "green"}}}
+      ]}}
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Portas do gf-server (probe)",
+      "gridPos": {"h": 8, "w": 18, "x": 6, "y": 0},
+      "targets": [{"expr": "gf_port_up", "legendFormat": "{{service}}:{{port}}"}]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "CPU host",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [{"expr": "1 - avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m]))", "legendFormat": "cpu"}]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Memória host",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [{"expr": "node_memory_MemAvailable_bytes", "legendFormat": "available"}]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Contas",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 16},
+      "targets": [{"expr": "gf_accounts_total"}]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Personagens",
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 16},
+      "targets": [{"expr": "gf_characters_total"}]
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Nível médio",
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 16},
+      "targets": [{"expr": "gf_characters_avg_level"}]
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Gold total (sum)",
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 16},
+      "targets": [{"expr": "gf_gold_gold_total"}]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Inflação de gold (derivada)",
+      "description": "Diferença instantânea da soma de gold — pico significa drop massivo de gold sem sumidouro correspondente.",
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 20},
+      "targets": [{"expr": "deriv(gf_gold_gold_total[10m])", "legendFormat": "Δgold/s"}]
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "PostgreSQL UP?",
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 28},
+      "targets": [{"expr": "pg_up"}],
+      "fieldConfig": {"defaults": {"mappings": [
+        {"type": "value", "options": {"0": {"text": "DOWN", "color": "red"}, "1": {"text": "UP", "color": "green"}}}
+      ]}}
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Conexões PG",
+      "gridPos": {"h": 8, "w": 18, "x": 6, "y": 28},
+      "targets": [{"expr": "sum by(datname) (pg_stat_database_numbackends)", "legendFormat": "{{datname}}"}]
+    }
+  ]
+}

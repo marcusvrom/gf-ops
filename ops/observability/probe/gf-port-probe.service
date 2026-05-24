@@ -1,0 +1,11 @@
+[Unit]
+Description=Probe TCP das portas do gf-server (publica métricas via textfile)
+# NÃO Requires=gf.target: a sonda existe justamente para reportar quando o gf cai.
+After=prometheus-node-exporter.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/gf-ops/ops/observability/probe/gf-port-probe.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gf-port-probe

@@ -1,0 +1,11 @@
+[Unit]
+Description=Sonda TCP do gf-server a cada 30s
+
+[Timer]
+OnBootSec=15s
+OnUnitActiveSec=30s
+AccuracySec=1s
+Unit=gf-port-probe.service
+
+[Install]
+WantedBy=timers.target

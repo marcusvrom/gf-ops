@@ -1,0 +1,100 @@
+# Custom queries para postgres_exporter — métricas de negócio do gf-server.
+# Lidas via PG_EXPORTER_EXTEND_QUERY_PATH.
+# Cada chave é o nome da métrica gerada; subkey "metrics" define labels e tipos.
+# Role gf_exporter tem SELECT em todas as tabelas dos 3 bancos (install-postgres-exporter.sh).
+
+gf_accounts:
+  query: |
+    SELECT count(*)::bigint AS total FROM accounts
+  master: false
+  cache_seconds: 30
+  metrics:
+    - total:
+        usage: GAUGE
+        description: "Total de contas em gf_ls.accounts"
+
+gf_characters:
+  query: |
+    SELECT
+      count(*)::bigint                     AS total,
+      coalesce(max(level), 0)::bigint      AS max_level,
+      coalesce(avg(level), 0)::float       AS avg_level
+    FROM player_characters
+  master: false
+  cache_seconds: 30
+  metrics:
+    - total:
+        usage: GAUGE
+        description: "Total de personagens"
+    - max_level:
+        usage: GAUGE
+        description: "Maior nível existente"
+    - avg_level:
+        usage: GAUGE
+        description: "Nível médio dos personagens"
+
+gf_gold:
+  # Agregados de economia (gold/crystal). Numéricos podem estourar bigint, então cast pra float.
+  query: |
+    SELECT
+      coalesce(sum(gold), 0)::float    AS gold_total,
+      coalesce(sum(crystal), 0)::float AS crystal_total,
+      coalesce(avg(gold), 0)::float    AS gold_avg,
+      coalesce(max(gold), 0)::float    AS gold_max
+    FROM player_characters
+  master: false
+  cache_seconds: 60
+  metrics:
+    - gold_total:
+        usage: GAUGE
+        description: "Soma de gold em todos os chars"
+    - crystal_total:
+        usage: GAUGE
+        description: "Soma de crystal em todos os chars"
+    - gold_avg:
+        usage: GAUGE
+        description: "Gold médio por char"
+    - gold_max:
+        usage: GAUGE
+        description: "Maior saldo de gold individual"
+
+gf_premium:
+  # Moeda premium (AP) em gf_ms.tb_user.pvalues — teto 99999.
+  query: |
+    SELECT
+      coalesce(sum(pvalues), 0)::bigint AS ap_total,
+      count(*) FILTER (WHERE pvalues >= 99999)::bigint AS ap_capped
+    FROM tb_user
+  master: false
+  cache_seconds: 60
+  metrics:
+    - ap_total:
+        usage: GAUGE
+        description: "Soma de AP (pvalues) em tb_user"
+    - ap_capped:
+        usage: GAUGE
+        description: "Contas com AP no teto (99999)"
+
+gf_invariant_id_idnum:
+  # Invariante crítica #1 (CLAUDE.md §6): cada accounts.id deve ter idnum igual em tb_user.
+  # Cross-DB via dblink seria caro; em vez disso comparamos contagens — a verificação
+  # detalhada vive em ops/backup/verify-restore.sh, que é mais barato chamar sob demanda.
+  # Aqui só publicamos a contagem por banco; se divergirem, dispara alerta.
+  query: |
+    SELECT count(*)::bigint AS ls_count FROM accounts
+  master: false
+  cache_seconds: 30
+  metrics:
+    - ls_count:
+        usage: GAUGE
+        description: "count(*) em gf_ls.accounts — comparar com gf_ms.tb_user (gf_invariant_tb_user_count)"
+
+gf_invariant_tb_user_count:
+  query: |
+    SELECT count(*)::bigint AS ms_count FROM tb_user
+  master: false
+  cache_seconds: 30
+  metrics:
+    - ms_count:
+        usage: GAUGE
+        description: "count(*) em gf_ms.tb_user — alerta se != gf_accounts_total"
