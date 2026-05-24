@@ -132,7 +132,8 @@ gf-mvp/
 | Smoke test do loop completo | ✅ COMPLETO | Loop validado: criar→mundo→quest→up nv8→relogar→persistiu |
 | Conta GM + comandos básicos | ✅ feito | TesteADM funcional in-game |
 | systemd units (ops/systemd) | ✅ feito | 6 services + gf.target; ordem causal via Requires=/After=; log no journald; install.sh idempotente. Falta validar na VM. |
-| Versão hardened do install | ⬜ TODO | Antes de qualquer exposição pública |
+| Versão hardened do install | ✅ feito | ops/install/ com 6 etapas idempotentes; role gf_app sem superuser; PG em localhost; sem chmod 777; segredo em /etc/gf-server/env (0600); patch IP com audit sha256. Falta validar na VM. |
+| Painel reescrito (web/) | ✅ feito | PHP+PDO, prepared statements, CSRF, sessão, lógica atômica create_account, admin auth (bcrypt em panel_admins). Falta validar na VM. |
 
 Legenda: ⬜ TODO · 🟡 em progresso · ✅ feito · 🔴 bloqueado
 
