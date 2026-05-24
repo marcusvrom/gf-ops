@@ -1,0 +1,22 @@
+[Unit]
+Description=Grand Fantasia ZoneServer
+Documentation=https://github.com/marcusvrom/gf-ops
+After=gf-world.service
+Requires=gf-world.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/gf_server/ZoneServer
+ExecStart=/root/gf_server/ZoneServer/ZoneServer
+Environment=LC_ALL=C
+Environment=LANG=C
+Environment=LANGUAGE=C
+Restart=on-failure
+RestartSec=3s
+TimeoutStartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gf-zone
+
+[Install]
+WantedBy=gf.target

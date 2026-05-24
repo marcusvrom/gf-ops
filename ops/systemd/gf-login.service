@@ -1,0 +1,22 @@
+[Unit]
+Description=Grand Fantasia LoginServer
+Documentation=https://github.com/marcusvrom/gf-ops
+After=gf-gateway.service
+Requires=gf-gateway.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/gf_server/LoginServer
+ExecStart=/root/gf_server/LoginServer/LoginServer
+Environment=LC_ALL=C
+Environment=LANG=C
+Environment=LANGUAGE=C
+Restart=on-failure
+RestartSec=3s
+TimeoutStartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gf-login
+
+[Install]
+WantedBy=gf.target

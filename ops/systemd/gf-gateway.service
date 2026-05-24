@@ -1,0 +1,22 @@
+[Unit]
+Description=Grand Fantasia GatewayServer
+Documentation=https://github.com/marcusvrom/gf-ops
+After=gf-ticket.service
+Requires=gf-ticket.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/gf_server/GatewayServer
+ExecStart=/root/gf_server/GatewayServer/GatewayServer
+Environment=LC_ALL=C
+Environment=LANG=C
+Environment=LANGUAGE=C
+Restart=on-failure
+RestartSec=3s
+TimeoutStartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gf-gateway
+
+[Install]
+WantedBy=gf.target

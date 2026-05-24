@@ -1,0 +1,22 @@
+[Unit]
+Description=Grand Fantasia WorldServer
+Documentation=https://github.com/marcusvrom/gf-ops
+After=gf-mission.service
+Requires=gf-mission.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/gf_server/WorldServer
+ExecStart=/root/gf_server/WorldServer/WorldServer
+Environment=LC_ALL=C
+Environment=LANG=C
+Environment=LANGUAGE=C
+Restart=on-failure
+RestartSec=3s
+TimeoutStartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gf-world
+
+[Install]
+WantedBy=gf.target

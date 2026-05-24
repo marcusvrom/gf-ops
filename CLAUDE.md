@@ -131,6 +131,7 @@ gf-mvp/
 | Cliente conecta (GF_ES 006.058) | ✅ feito | Via LAN; World em IP da VM:5567 |
 | Smoke test do loop completo | ✅ COMPLETO | Loop validado: criar→mundo→quest→up nv8→relogar→persistiu |
 | Conta GM + comandos básicos | ✅ feito | TesteADM funcional in-game |
+| systemd units (ops/systemd) | ✅ feito | 6 services + gf.target; ordem causal via Requires=/After=; log no journald; install.sh idempotente. Falta validar na VM. |
 | Versão hardened do install | ⬜ TODO | Antes de qualquer exposição pública |
 
 Legenda: ⬜ TODO · 🟡 em progresso · ✅ feito · 🔴 bloqueado
