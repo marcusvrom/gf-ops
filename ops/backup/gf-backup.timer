@@ -1,0 +1,14 @@
+[Unit]
+Description=Backup diário do Grand Fantasia (03:17 UTC)
+Documentation=https://github.com/marcusvrom/gf-ops
+
+[Timer]
+# 03:17 UTC, com jitter de 5min — evita pico no destino se houver vários servidores.
+OnCalendar=*-*-* 03:17:00 UTC
+RandomizedDelaySec=5min
+# Se a VM estava desligada na hora, roda assim que voltar.
+Persistent=true
+Unit=gf-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -134,6 +134,7 @@ gf-mvp/
 | systemd units (ops/systemd) | ✅ feito | 6 services + gf.target; ordem causal via Requires=/After=; log no journald; install.sh idempotente. Falta validar na VM. |
 | Versão hardened do install | ✅ feito | ops/install/ com 6 etapas idempotentes; role gf_app sem superuser; PG em localhost; sem chmod 777; segredo em /etc/gf-server/env (0600); patch IP com audit sha256. Falta validar na VM. |
 | Painel reescrito (web/) | ✅ feito | PHP+PDO, prepared statements, CSRF, sessão, lógica atômica create_account, admin auth (bcrypt em panel_admins). Falta validar na VM. |
+| Backup off-site (ops/backup) | ✅ feito | pg_dump -Fc dos 3 bancos + SHA256SUMS + manifest; off-site via SSH ou rclone; retenção configurável; verify-restore valida invariante id==idnum; timer diário 03:17 UTC. Falta validar na VM. |
 
 Legenda: ⬜ TODO · 🟡 em progresso · ✅ feito · 🔴 bloqueado
 

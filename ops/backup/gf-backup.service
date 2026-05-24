@@ -1,0 +1,17 @@
+[Unit]
+Description=Grand Fantasia — backup dos 3 bancos + envio off-site
+Documentation=https://github.com/marcusvrom/gf-ops
+After=postgresql.service network-online.target
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=oneshot
+# O script lê /etc/gf-server/env via load_env(); não precisa EnvironmentFile.
+ExecStart=/opt/gf-ops/ops/backup/backup.sh
+# Sem Restart= — falha é avisada via OnFailure/journalctl, não tentamos de novo
+# imediatamente (backup parcial pisaria no anterior).
+TimeoutStartSec=2h
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gf-backup
