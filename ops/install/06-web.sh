@@ -13,8 +13,15 @@ PANEL_HOST="${GF_PANEL_SERVER_NAME:-gf-panel.local}"
 
 [[ -d "$SRC_WEB" ]] || die "não encontrado: $SRC_WEB"
 
-log "instalando apache2 + php-pgsql"
-DEBIAN_FRONTEND=noninteractive apt-get install -y apache2 php php-cli php-pgsql libapache2-mod-php
+log "instalando apache2 + php + extensões necessárias"
+# php-pgsql:   PDO_pgsql usado em web/lib/db.php
+# php-mbstring: mb_strlen() em web/public/index.php e admin/change.php — sem ele
+#               o registro de jogador falha em runtime com 'undefined function'.
+#               (Lacuna que existia no install original; ver docs/runtime-requirements.md)
+DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  apache2 php php-cli libapache2-mod-php \
+  php-pgsql \
+  php-mbstring
 
 log "desativando default site (porta 80) p/ não conflitar"
 a2dissite 000-default >/dev/null 2>&1 || true

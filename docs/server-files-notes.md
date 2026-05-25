@@ -276,3 +276,39 @@ Uso: ./create_account.sh <user> <senha> [gm]
 
 NOTA p/ reescrita do painel: a mesma lógica (sequence + transação cross-DB + md5) deve
 ir pro PHP, com prepared statements. A invariante id==idnum é requisito funcional, não opcional.
+
+---
+
+## APÊNDICE — Extensões PHP necessárias (achado posterior)
+
+Documento canônico: `docs/runtime-requirements.md`. Aqui o resumo do que afeta este repo:
+
+- `php-pgsql` — PDO driver para PostgreSQL. Sem ele, `web/lib/db.php` falha no boot.
+- **`php-mbstring`** — `mb_strlen()` em `web/public/index.php` (validação de username/senha
+  no registro) e nas admin pages. **Sem ele, o registro de jogador quebra em runtime**
+  com `Call to undefined function mb_strlen()`. O install original (sem hardening) só
+  instalava `php-pgsql`; esta foi a lacuna que motivou `ops/bootstrap/stages/20-web-stack.sh`
+  e a inclusão explícita em `ops/install/06-web.sh`.
+
+## APÊNDICE — Decisão sobre `pg_hba` md5 vs scram-sha-256
+
+Os binários ELF do GameServer são da era ~2006/2008 (Linux 2.6.32+), com libpq pré-SCRAM
+(SCRAM só foi para o upstream em PG10/2017). Logo:
+
+- `pg_hba.conf` para `127.0.0.1/32` usa método `md5` (não scram-sha-256).
+- Roles `gf_game` e `gf_panel` são criadas após `SET password_encryption = 'md5'` —
+  sem isso, o role nasceria com hash SCRAM e a auth `md5` falharia mesmo aceitando o método.
+- Como o PG ouve só em loopback (`listen_addresses = 'localhost'`), o ganho prático de
+  SCRAM seria zero (não há vetor de captura de hash na rede).
+
+Decisão e racional documentados em `ops/hardening/README.md`.
+
+## APÊNDICE — Duas roles, filosofias diferentes
+
+- `gf_game`: **amplo por necessidade**. Binários caixa-preta — recortar privilégio por
+  tabela seria adivinhação. Conservador: SELECT/INSERT/UPDATE/DELETE em todas as tabelas
+  dos 3 bancos. Mesmo assim: sem SUPERUSER/CREATEDB/CREATEROLE — bem melhor que o
+  postgres superuser do install original.
+- `gf_panel`: **mínimo por auditoria**. Código aberto em `web/`. Cada GRANT é o conjunto
+  exato que o painel toca; nova feature = novo GRANT explícito. Mapa em
+  `ops/hardening/README.md`.

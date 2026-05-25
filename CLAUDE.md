@@ -137,6 +137,9 @@ gf-mvp/
 | Backup off-site (ops/backup) | ✅ feito | pg_dump -Fc dos 3 bancos + SHA256SUMS + manifest; off-site via SSH ou rclone; retenção configurável; verify-restore valida invariante id==idnum; timer diário 03:17 UTC. Falta validar na VM. |
 | Observabilidade (ops/observability) | ✅ feito | node_exporter + postgres_exporter + sonda TCP (gf_port_up). Prometheus/Grafana **opcionais** (host externo); configs de exemplo. Custom queries publicam gf_accounts_total, gf_gold_*, gf_premium_ap_capped, invariante #1. gf_target não depende de nada disso. Falta validar na VM. |
 | Auditoria de economia (scripts/sql/audit) | ✅ feito | 7 queries .sql + run-audit.sh: fluxo de gold (alerta 7d/21d ≥ 2x), distribuição range1..10, outliers ≥ 50× mediana, AP no teto/acima do teto, leilões ≥ 100× mediana, GM cross-tabela, invariante #1 sem dblink. Read-only. Falta validar na VM. |
+| Hardening do PostgreSQL (ops/hardening) | ✅ feito | Duas roles: gf_game (amplo p/ binários caixa-preta) + gf_panel (mínimo auditado por web/); pg_hba md5 (binários legados pré-SCRAM); listen=localhost; ALTER DEFAULT PRIVILEGES FOR ROLE postgres cobre updates de schema; gf_app mantido como ponte; rollback.sh --retire-gf-app separado. Falta validar na VM. |
+| Bootstrap reproduzível (ops/bootstrap) | ✅ feito | 9 stages encadeados (10-os, 20-web, 30-pg, 40-db, 50-cfg, 60-hard, 70-web, 80-systemd, 90-obs). Adiciona php-mbstring (lacuna do install); locale C persistente em /etc/default/locale. Cruzamento "achado → stage" no docs/runtime-requirements.md. Falta validar na VM. |
+| Comando de migração (ops/migrate) | ✅ feito | preflight → bootstrap → restore → ip-patch → ressync grants → start → post-validate. Bundle = tar.zst do ops/backup. Runbook + script idempotente; pede confirmação por etapa (--yes para automação). Não migra .vhdx — só dados. Falta validar na VM. |
 
 Legenda: ⬜ TODO · 🟡 em progresso · ✅ feito · 🔴 bloqueado
 
@@ -150,9 +153,13 @@ Legenda: ⬜ TODO · 🟡 em progresso · ✅ feito · 🔴 bloqueado
   entre 2 bancos sem FK → garantir na escrita, atomicamente.
 - 🔑 **Senha = md5(senha)** em accounts.password E tb_user.password/pwd. Servidor legado
   espera MD5; texto plano OU bcrypt quebram o login.
-- 🔑 **Pré-req de SO:** locale C (LC_ALL/LANG/LANGUAGE=C) + libs i386 + nscd ativo.
-  Sem isso os binários 32-bit nem sobem.
+- 🔑 **Pré-req de SO:** locale C (LC_ALL/LANG/LANGUAGE=C) + libs i386 + nscd ativo +
+  **php-mbstring** no painel (sem ele o registro quebra com `undefined function mb_strlen`).
+  Lugar único e óbvio: `docs/runtime-requirements.md`. Materializado em `ops/bootstrap/`.
 - 🔑 **Ordem de boot é causal:** TicketServer(7777) ANTES do LoginServer, senão ECONNREFUSED.
+- 🔑 **PostgreSQL auth = md5, não scram-sha-256** para os binários legados ELF (pré-SCRAM).
+  pg_hba `127.0.0.1/32 md5` + role criada após `SET password_encryption='md5'`. Documentado
+  em `ops/hardening/README.md`.
 
 ### Mecânica do servidor
 - **IP é patch binário, não config.** O IP do servidor está hardcoded no `WorldServer`/`ZoneServer`
@@ -192,22 +199,25 @@ Legenda: ⬜ TODO · 🟡 em progresso · ✅ feito · 🔴 bloqueado
 
 ## 8. Backlog priorizado (a fila de trabalho do Claude Code)
 
-MVP validado. Próximas tarefas em ordem de prioridade:
+MVP validado. Backlog original (1-6) concluído. Próximas frentes:
 
-1. **systemd units** (`ops/systemd/`) — substituir o boot manual por 6 services
-   (gf-ticket → gf-gateway → gf-login → gf-mission → gf-world → gf-zone) com
-   `After=`/`Requires=` na ordem causal, `Environment=LC_ALL=C LANG=C LANGUAGE=C`,
-   dependência de `nscd` e `postgresql`, log por processo (resolve o `&>/dev/null`).
-   Mais um `gf.target` que orquestra todos. Base: docs/relatorio-mvp-execucao.pdf §6.
-2. **Painel reescrito** (`web/`) — PHP+PDO com prepared statements; embutir a lógica
-   atômica do `scripts/setup/create_account.sh` (sequence + transação cross-DB + md5 +
-   invariante id==idnum); auth nas páginas admin (gm/gold). Mata SQLi + race + dessync.
-3. **Hardening do install** — role PostgreSQL dedicada (sem superusuário), PG só em
-   localhost, sem `chmod 777`, segredo fora do texto plano.
-4. **Backup off-site** (`ops/backup/`) — estender o `./server backup` (pg_dump) com cópia
-   para fora da VM + teste de restore. Remover o `chmod -R 777` do script original.
-5. **Observabilidade** — node_exporter + postgres_exporter + Grafana; uptime na porta de login.
-6. **Auditoria de economia** (`scripts/sql/audit/`) — consumir `gold_log` p/ detectar inflação.
+### Concluído (todas falta validar na VM antes de produção)
+1. ✅ **systemd units** (`ops/systemd/`) — 6 services + gf.target, ordem causal.
+2. ✅ **Painel reescrito** (`web/`) — PDO, prepared statements, CSRF, atomicidade.
+3. ✅ **Hardening do install** (`ops/install/` + `ops/hardening/`) — gf_app inicial +
+   duas roles (gf_game/gf_panel) por privilégio mínimo + pg_hba md5 + listen=localhost.
+4. ✅ **Backup off-site** (`ops/backup/`) — pg_dump -Fc + SSH/rclone + verify-restore.
+5. ✅ **Observabilidade** (`ops/observability/`) — exporters + sonda; Prometheus opcional.
+6. ✅ **Auditoria de economia** (`scripts/sql/audit/`) — 7 queries + run-audit.sh.
+7. ✅ **Bootstrap reproduzível** (`ops/bootstrap/`) — 9 stages do zero, com php-mbstring.
+8. ✅ **Comando de migração** (`ops/migrate/`) — preflight/bootstrap/restore/ip/start/validate.
+
+### Próximo (ainda em aberto)
+- **Validar em VM descartável** — rodar `ops/bootstrap/` + `ops/migrate/` numa Ubuntu
+  22.04 virgem, snapshot, gameplay completo. Roteiro em `ops/migrate/README.md`.
+- **Retirar role ponte `gf_app`** após validação — `ops/hardening/rollback.sh --retire-gf-app`.
+- **Bot de Discord** (`bot/`) — tecnologia ainda em aberto. Decidir quando começar.
+- **Backup local dos arquivos do repo GameServer** — repo público instável (DMCA/451).
 
 > Antes de começar QUALQUER tarefa: ler este CLAUDE.md inteiro e docs/server-files-notes.md.
 > As invariantes da §6 são inegociáveis — código que as viole quebra o login.

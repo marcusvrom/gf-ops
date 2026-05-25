@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Aplica config nos setup.ini do servidor.
 #
+# CONVIVÊNCIA COM ops/hardening/: este script escreve a role LEGADA gf_app
+# (ponte). O hardening (ops/hardening/04-update-consumers.sh) reescreve com
+# gf_game depois, em janela de manutenção. Mantemos esta ordem porque assim
+# uma instalação parcial (sem hardening) ainda sobe.
+#
 # Limitações herdadas (não dá pra resolver sem mexer nos binários):
 #   - Os binários ELF lêem setup.ini em texto — a senha do DB FICA em disco.
 #     Mitigação: chmod 0600 + chown root:root nos arquivos de config, dir 0750.
